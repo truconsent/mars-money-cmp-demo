@@ -20,10 +20,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    // @truconsent/consent-notice is a local `file:` link (../truKIT-NPM) for
-    // local SDK development — Vite's dep optimizer can't reliably pre-bundle
-    // a linked package's dist output, so exclude it and let it load from
-    // source-built dist/ directly on every change.
+    // @truconsent/consent-notice is installed from the npm registry (not a
+    // local `file:` link) — excluded from pre-bundling as a defensive
+    // leftover from when this was linked to ../truKIT-NPM for local SDK
+    // development; harmless to keep, but no longer load-bearing.
     exclude: ["@truconsent/consent-notice"],
   },
 }));
