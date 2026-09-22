@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import TruConsentSync from "./components/TruConsentSync";
 import Index from "./pages/Index";
 import Banking from "./pages/Banking";
 import Investments from "./pages/Investments";
@@ -30,6 +31,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <TruConsentSync />
         <Toaster />
         <Sonner />
         <BrowserRouter>
