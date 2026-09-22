@@ -2,7 +2,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
 import "@truconsent/consent-notice/RightCenter.css"
 import { RightCenter } from "@truconsent/consent-notice"
 
@@ -11,18 +10,16 @@ import { RightCenter } from "@truconsent/consent-notice"
 const RightsCenter = () => {
   const { user } = useAuth();
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // const iframeUrl = `https://iwjwpfuaygfojwrrstly.supabase.co/functions/v1/embed-rights-center?client_id=MARS_MONEY_CLIENT_001&data_principal_id=${user.id}`;
+  // No forced login redirect here: a non-SSO customer (no site login) must
+  // still be able to reach this page and verify via mobile OTP inside the
+  // widget itself. When `user` is signed in, its id is passed as the SSO
+  // identity; otherwise the widget falls back to its own non-SSO flow.
 
   return (
     <div className="">
       <Navigation />
       <RightCenter
-        userId={user.id}
+        userId={user?.id}
         apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
         apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY_RIGHT}
         assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}

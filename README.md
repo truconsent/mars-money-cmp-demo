@@ -1,73 +1,83 @@
-# Welcome to your Lovable project
+# mars.money — truConsent CMP Demo
 
-## Project info
+A demo banking web app that showcases the truConsent **Consent Management Platform (CMP)** — including the consent banner (`<ConsentModal />`) and the Data Principal Rights Center (`<RightCenter />`).
 
-**URL**: https://lovable.dev/projects/087d9ac0-6830-4348-9df5-9b673769f7c1
+Built with **React + TypeScript + Vite + Tailwind CSS + shadcn/ui**.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## What this demo shows
 
-**Use Lovable**
+- **Consent banner** — shown on page load via `<ConsentModal />` for the configured asset/collection point
+- **Rights Center** — accessible at `/rights-center`, lets a logged-in user manage their consents, submit data rights requests, file grievances, and manage nominees
+- **Legitimate Interest** purposes — displayed with a green "Legitimate Interest" badge and a `Shown: Yes/No` status (no toggle)
+- **Necessary** purposes — red "Necessary" badge and `Consented: Yes/No` status (no toggle)
+- **Optional** purposes — toggle to grant or withdraw consent, `Consented: Yes/No` status
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/087d9ac0-6830-4348-9df5-9b673769f7c1) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
+cp .env.example .env   # fill in your truConsent credentials
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+App runs at `http://localhost:8081`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Environment variables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Create a `.env` file in the project root:
 
-## What technologies are used for this project?
+```env
+VITE_TRU_CONSENT_API_KEY=your_api_key
+VITE_TRU_CONSENT_ORGANIZATION_ID=your_org_id
+VITE_TRU_CONSENT_API_URL=https://trukit-dev.truconsent.io
+VITE_TRU_CONSENT_ASSET_ID=your_asset_uuid
+VITE_TRU_CONSENT_API_KEY_RIGHT=your_rights_center_api_key   # separate key scoped for Rights Center
+```
 
-This project is built with:
+Get these values from the truConsent platform dashboard under **API Keys** and **Assets**.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Pages
 
-Simply open [Lovable](https://lovable.dev/projects/087d9ac0-6830-4348-9df5-9b673769f7c1) and click on Share -> Publish.
+| Route | Description |
+|---|---|
+| `/` | Home — consent banner fires on first visit |
+| `/rights-center` | Data Principal Rights Center |
+| `/privacy` | Privacy policy page |
+| `/banking`, `/investments`, `/loans` | Demo banking pages |
+| `/my-account` | Account page |
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## truConsent package
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This demo uses [`@truconsent/consent-notice`](https://www.npmjs.com/package/@truconsent/consent-notice) via a local symlink to `../truKIT-NPM` for development:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```
+node_modules/@truconsent/consent-notice → ../truKIT-NPM
+```
+
+To use the published npm package instead:
+
+```bash
+npm install @truconsent/consent-notice@0.0.25
+```
+
+Then remove the symlink from `node_modules/@truconsent/` and re-run `npm install`.
+
+---
+
+## Tech stack
+
+- **React 18** + **TypeScript**
+- **Vite**
+- **Tailwind CSS** + **shadcn/ui**
+- **react-router-dom** v6
+- **@truconsent/consent-notice** v0.0.25
