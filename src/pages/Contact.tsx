@@ -4,8 +4,49 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Clock, MessageCircle, Headphones } from "lucide-react";
+import { FormEvent, useRef, useState } from "react";
+import { TruConsentModal } from "@truconsent/consent-notice";
+import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
+
+// truConsent collection point shown before the message is sent.
+const BANNER_ID = "CP011";
 
 const Contact = () => {
+  const { user } = useAuth();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [showBanner, setShowBanner] = useState(false);
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  // Show the consent notice first; the message is sent only once it is accepted.
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user) {
+      setGuestId(await getOrCreateGuestId());
+    }
+    setShowBanner(true);
+  };
+
+  const onConsentClose = async (type: string) => {
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
+    setShowBanner(false);
+    if (outcome === "consented") {
+      toast({
+        title: "Message Sent",
+        description: "Thanks for reaching out! Our support team will get back to you soon.",
+      });
+      formRef.current?.reset();
+    } else if (outcome === "declined") {
+      toast({
+        variant: "destructive",
+        title: "Message Not Sent",
+        description: "Your message was not sent as consent was declined.",
+      });
+    }
+  };
+
   const contactMethods = [
     {
       icon: Phone,
@@ -78,7 +119,21 @@ const Contact = () => {
             
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h3>
-              <form className="space-y-6">
+              {showBanner && (user || guestId) && (
+                <TruConsentModal
+                  organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}
+                  apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
+                  assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
+                  bannerId={BANNER_ID}
+                  apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
+                  userId={user ? user.id : guestId!}
+                  logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}
+                  onClose={(type) => {
+                    onConsentClose(type);
+                  }}
+                />
+              )}
+              <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>

@@ -16,6 +16,10 @@ import { ContactInfoSection } from "./creditCard/ContactInfoSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
+
+// truConsent collection point shown before this form is submitted.
+const BANNER_ID = "CP016";
 
 interface CreditCardFormProps {
   onBack: () => void;
@@ -85,9 +89,9 @@ export const CreditCardForm = ({ onBack }: CreditCardFormProps) => {
 
   const onSubmitted = async (type: string) => {
     console.log("Credit Card Application: TruConsentModal onClose triggered with type:", type);
-    const normalizedType = (type || "no_action").toLowerCase().replace(/ /g, "_");
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
 
-    if ((normalizedType === "approved" || normalizedType === "partial_consent" || normalizedType === "partially_consented") && formData) {
+    if (outcome === "consented" && formData) {
       const saved = await saveApplication(formData);
       if (saved) {
         toast({
@@ -98,7 +102,7 @@ export const CreditCardForm = ({ onBack }: CreditCardFormProps) => {
         setShowBanner(false);
         onBack();
       }
-    } else if (normalizedType === "declined" || normalizedType === "rejected") {
+    } else if (outcome === "declined") {
       toast({
         variant: "destructive",
         title: "Application Cancelled",
@@ -120,7 +124,7 @@ export const CreditCardForm = ({ onBack }: CreditCardFormProps) => {
           organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}
           apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
           assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
-          bannerId={"CP008"}
+          bannerId={BANNER_ID}
           apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
           userId={user ? user.id : guestId!}
           logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}

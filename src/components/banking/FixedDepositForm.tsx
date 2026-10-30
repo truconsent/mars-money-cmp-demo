@@ -22,8 +22,14 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { TruConsentModal } from "@truconsent/consent-notice";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
+
+// truConsent collection point shown before this form is submitted.
+const BANNER_ID = "CP036";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -90,20 +96,65 @@ export const FixedDepositForm = ({ onBack }: FixedDepositFormProps) => {
     }
   };
 
+  const [showBanner, setShowBanner] = useState(false);
+  const [formData, setFormData] = useState<FormData | null>(null);
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  // Show the consent banner first; the application is saved only after consent.
   const onSubmit = async (data: FormData) => {
     console.log("Fixed Deposit Form submitted:", data);
-    const saved = await saveApplication(data);
-    if (saved) {
+    setFormData(data);
+    if (!user) {
+      const id = await getOrCreateGuestId();
+      setGuestId(id);
+    }
+    setShowBanner(true);
+  };
+
+  const onSubmitted = async (type: string) => {
+    console.log("Fixed Deposit Application: TruConsentModal onClose triggered with type:", type);
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
+
+    if (outcome === "consented" && formData) {
+      const saved = await saveApplication(formData);
+      setShowBanner(false);
+      if (saved) {
+        toast({
+          title: "Application Submitted",
+          description: "Fixed deposit application submitted successfully! We will process your request soon.",
+        });
+        onBack();
+      }
+    } else if (outcome === "declined") {
       toast({
-        title: "Application Submitted",
-        description: "Fixed deposit application submitted successfully! We will process your request soon.",
+        variant: "destructive",
+        title: "Application Cancelled",
+        description: "Your fixed deposit application was not submitted as consent was declined.",
       });
+      setShowBanner(false);
       onBack();
+    } else {
+      // For no_action or closing without decision, just hide the banner
+      setShowBanner(false);
     }
   };
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
+      {showBanner && (user || guestId) && (
+        <TruConsentModal
+          organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}
+          apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
+          assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
+          bannerId={BANNER_ID}
+          apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
+          userId={user ? user.id : guestId!}
+          logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}
+          onClose={(type) => {
+            onSubmitted(type);
+          }}
+        />
+      )}
       <CardHeader>
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">

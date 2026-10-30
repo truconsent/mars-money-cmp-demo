@@ -24,7 +24,11 @@ import { TrendingUp } from "lucide-react";
 import { TruConsentModal } from "@truconsent/consent-notice";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
 import { toast } from "@/components/ui/use-toast";
+
+// truConsent collection point shown before this form is submitted.
+const BANNER_ID = "CP014";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -74,18 +78,18 @@ export const LoanAgainstMFForm = ({ onBack }: LoanAgainstMFFormProps) => {
     setShowBanner(true);
   };
 
-  const onSubmitted = (type) => {
+  const onSubmitted = async (type: string) => {
     console.log("Loan Against MF Application: TruConsentModal onClose triggered with type:", type);
-    const normalizedType = (type || "no_action").toLowerCase().replace(/ /g, "_");
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
 
-    if (normalizedType === "approved" || normalizedType === "partial_consent" || normalizedType === "partially_consented") {
+    if (outcome === "consented") {
       toast({
         title: "Application Submitted",
         description: "Your loan against mutual funds application has been submitted successfully!",
       });
       onBack();
       setShowBanner(false);
-    } else if (normalizedType === "declined" || normalizedType === "rejected") {
+    } else if (outcome === "declined") {
       toast({
         variant: "destructive",
         title: "Application Cancelled",
@@ -110,7 +114,7 @@ export const LoanAgainstMFForm = ({ onBack }: LoanAgainstMFFormProps) => {
             apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
             apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
             organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}
-            bannerId={"CP012"}
+            bannerId={BANNER_ID}
             onClose={(type) => {
               onSubmitted(type);
             }}

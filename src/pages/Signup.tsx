@@ -11,6 +11,12 @@ import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { TruConsentModal } from '@truconsent/consent-notice';
+import { getOrCreateGuestId } from '@/utils/guestId';
+import { getConsentOutcome } from '@/utils/consent';
+
+// truConsent collection point shown before the account is created.
+const BANNER_ID = 'CP018';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -41,7 +47,31 @@ const Signup = () => {
     }
   }, [user, navigate]);
 
+  const [formData, setFormData] = useState<SignupFormData | null>(null);
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  // Show the consent notice first; the account is created only once it is accepted.
   const onSubmit = async (data: SignupFormData) => {
+    setGuestId(await getOrCreateGuestId());
+    setFormData(data);
+  };
+
+  const onConsentClose = async (type: string) => {
+    const data = formData;
+    const outcome = await getConsentOutcome(type, BANNER_ID, guestId!);
+    setFormData(null);
+    if (outcome === 'consented' && data) {
+      await createAccount(data);
+    } else if (outcome === 'declined') {
+      toast({
+        title: "Account not created",
+        description: "Your account was not created as consent was declined.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createAccount = async (data: SignupFormData) => {
     const result = await signup(data.email, data.password, data.name);
     
     if (result.success) {
@@ -73,6 +103,20 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 flex items-center justify-center p-4">
+      {formData && guestId && (
+        <TruConsentModal
+          organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}
+          apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
+          assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
+          bannerId={BANNER_ID}
+          apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
+          userId={guestId}
+          logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}
+          onClose={(type) => {
+            onConsentClose(type);
+          }}
+        />
+      )}
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-4">
