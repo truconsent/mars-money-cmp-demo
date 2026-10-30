@@ -24,7 +24,11 @@ import { Banknote } from "lucide-react";
 import { TruConsentModal } from "@truconsent/consent-notice";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
 import { toast } from "@/components/ui/use-toast";
+
+// truConsent collection point shown before this form is submitted.
+const BANNER_ID = "CP015";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -76,18 +80,18 @@ export const PersonalLoanForm = ({ onBack }: PersonalLoanFormProps) => {
     setShowBanner(true);
   };
 
-  const onSubmitted = (type) => {
+  const onSubmitted = async (type: string) => {
     console.log("Personal Loan Application: TruConsentModal onClose triggered with type:", type);
-    const normalizedType = (type || "no_action").toLowerCase().replace(/ /g, "_");
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
 
-    if (normalizedType === "approved" || normalizedType === "partial_consent" || normalizedType === "partially_consented") {
+    if (outcome === "consented") {
       toast({
         title: "Application Submitted",
         description: "Your personal loan application has been submitted successfully!",
       });
       onBack();
       setShowBanner(false);
-    } else if (normalizedType === "declined" || normalizedType === "rejected") {
+    } else if (outcome === "declined") {
       toast({
         variant: "destructive",
         title: "Application Cancelled",
@@ -109,7 +113,7 @@ export const PersonalLoanForm = ({ onBack }: PersonalLoanFormProps) => {
             assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
             userId={user ? user.id : guestId!}
             logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}
-            bannerId={"CP012"}
+            bannerId={BANNER_ID}
             apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
             apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
             organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}

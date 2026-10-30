@@ -26,6 +26,10 @@ import { toast } from "@/components/ui/use-toast"; // Importing toast
 import { TruConsentModal } from "@truconsent/consent-notice"; // Importing TruConsentModal
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
+
+// truConsent collection point shown before this form is submitted.
+const BANNER_ID = "CP039";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -92,11 +96,11 @@ export const SalaryAccountForm = ({ onBack }: SalaryAccountFormProps) => {
   };
 
   // onSubmitted function, handles the response from the TruConsentModal
-  const onSubmitted = (type: string) => {
+  const onSubmitted = async (type: string) => {
     console.log("Salary Account Application: TruConsentModal onClose triggered with type:", type);
-    const normalizedType = (type || "no_action").toLowerCase().replace(/ /g, "_");
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
 
-    if (normalizedType === "approved" || normalizedType === "partial_consent" || normalizedType === "partially_consented") {
+    if (outcome === "consented") {
       // If consent is approved, proceed with application submission success
       toast({
         title: "Application Submitted",
@@ -104,7 +108,7 @@ export const SalaryAccountForm = ({ onBack }: SalaryAccountFormProps) => {
       });
       setShowBanner(false); // Hide the banner as consent is given and processed
       onBack(); // Navigate back or reset form
-    } else if (normalizedType === "declined" || normalizedType === "rejected") {
+    } else if (outcome === "declined") {
       // If consent is declined, inform the user and go back
       toast({
         variant: "destructive",
@@ -128,7 +132,7 @@ export const SalaryAccountForm = ({ onBack }: SalaryAccountFormProps) => {
             assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
           userId={user ? user.id : guestId!}
           logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}
-          bannerId={"CP014"}
+          bannerId={BANNER_ID}
           apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
           apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
           organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}

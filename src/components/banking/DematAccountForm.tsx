@@ -27,6 +27,10 @@ import { TruConsentModal } from "@truconsent/consent-notice";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateGuestId } from "@/utils/guestId";
+import { getConsentOutcome } from "@/utils/consent";
+
+// truConsent collection point shown before this form is submitted.
+const BANNER_ID = "CP037";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -119,9 +123,9 @@ export const DematAccountForm = ({ onBack }: DematAccountFormProps) => {
 
   const onSubmitted = async (type: string) => {
     console.log("Demat Account Application: TruConsentModal onClose triggered with type:", type);
-    const normalizedType = (type || "no_action").toLowerCase().replace(/ /g, "_");
+    const outcome = await getConsentOutcome(type, BANNER_ID, user ? user.id : guestId!);
 
-    if ((normalizedType === "approved" || normalizedType === "partial_consent" || normalizedType === "partially_consented") && formData) {
+    if (outcome === "consented" && formData) {
       const saved = await saveApplication(formData);
       if (saved) {
         toast({
@@ -132,7 +136,7 @@ export const DematAccountForm = ({ onBack }: DematAccountFormProps) => {
         setShowBanner(false);
         onBack();
       }
-    } else if (normalizedType === "declined" || normalizedType === "rejected") {
+    } else if (outcome === "declined") {
       toast({
         variant: "destructive",
         title: "Application Cancelled",
@@ -154,7 +158,7 @@ export const DematAccountForm = ({ onBack }: DematAccountFormProps) => {
             assetId={import.meta.env.VITE_TRU_CONSENT_ASSET_ID}
           userId={user ? user.id : guestId!}
           logoUrl={"/lovable-uploads/d3d83a6e-8210-420a-a23b-0c89fc7ee3f4.png"}
-          bannerId={"CP013"}
+          bannerId={BANNER_ID}
           apiUrl={import.meta.env.VITE_TRU_CONSENT_API_URL}
           apiKey={import.meta.env.VITE_TRU_CONSENT_API_KEY}
           organizationId={import.meta.env.VITE_TRU_CONSENT_ORGANIZATION_ID}
