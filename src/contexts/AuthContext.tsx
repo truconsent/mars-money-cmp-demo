@@ -133,12 +133,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { success: false, error: error.message };
       }
 
-      // Check if user needs to confirm email
-      if (data.user && !data.session) {
-        setIsLoading(false);
-        return { success: true, error: 'Please check your email to confirm your account' };
+      // Email confirmation is off, so log the new user in straight away if
+      // signUp did not already return a session.
+      if (!data.session) {
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        if (loginError) {
+          setIsLoading(false);
+          return { success: false, error: loginError.message };
+        }
       }
 
+      // The auth state change listener will handle setting the user and profile
       return { success: true };
     } catch (error) {
       setIsLoading(false);

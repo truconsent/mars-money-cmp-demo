@@ -75,18 +75,11 @@ const Signup = () => {
     const result = await signup(data.email, data.password, data.name);
     
     if (result.success) {
-      if (result.error) {
-        toast({
-          title: "Account created!",
-          description: result.error,
-        });
-      } else {
-        toast({
-          title: "Welcome to mars.money!",
-          description: "Your account has been created successfully.",
-        });
-        navigate('/', { replace: true });
-      }
+      toast({
+        title: "Welcome to mars.money!",
+        description: "Your account has been created successfully.",
+      });
+      navigate('/', { replace: true });
     } else {
       toast({
         title: "Signup failed",
